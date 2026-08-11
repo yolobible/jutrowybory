@@ -3,6 +3,7 @@ defmodule JutrowyboryWeb.AdminLive do
 
   alias Jutrowybory.Survey
   alias Jutrowybory.Survey.Question
+  alias Jutrowybory.Survey.Topic
 
   @impl true
   def mount(_params, _session, socket) do
@@ -12,10 +13,29 @@ defmodule JutrowyboryWeb.AdminLive do
      |> assign(:topics, Survey.list_topics())
      |> assign(:global, Survey.global_stats())
      |> assign(:stats, Survey.question_stats())
+     |> assign(:topic_form, topic_form())
      |> assign(:question_form, question_form())}
   end
 
   @impl true
+  def handle_event("validate_topic", %{"topic" => params}, socket) do
+    {:noreply, assign(socket, :topic_form, topic_form(params))}
+  end
+
+  def handle_event("save_topic", %{"topic" => params}, socket) do
+    case Survey.create_topic(params) do
+      {:ok, _topic} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Temat został dodany.")
+         |> assign(:topics, Survey.list_topics())
+         |> assign(:topic_form, topic_form())}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :topic_form, to_form(changeset))}
+    end
+  end
+
   def handle_event("validate_question", %{"question" => params}, socket) do
     {:noreply, assign(socket, :question_form, question_form(params))}
   end
@@ -44,6 +64,10 @@ defmodule JutrowyboryWeb.AdminLive do
       |> Jutrowybory.Repo.update()
 
     {:noreply, assign(socket, :stats, Survey.question_stats())}
+  end
+
+  defp topic_form(params \\ %{}) do
+    Survey.change_topic(%Topic{}, params) |> to_form()
   end
 
   defp question_form(params \\ %{}) do
@@ -82,6 +106,30 @@ defmodule JutrowyboryWeb.AdminLive do
         <div class="stat">
           <div class="stat-title">Głosy na komentarze</div>
           <div class="stat-value">{@global.votes}</div>
+        </div>
+      </div>
+
+      <%!-- Dodawanie tematu --%>
+      <div class="card bg-base-100 border border-base-300 shadow-sm mb-8">
+        <div class="card-body">
+          <h2 class="card-title">Dodaj nowy temat</h2>
+          <.form
+            for={@topic_form}
+            id="admin-topic-form"
+            phx-change="validate_topic"
+            phx-submit="save_topic"
+          >
+            <.input
+              field={@topic_form[:name]}
+              type="text"
+              label="Nazwa tematu"
+              placeholder="np. Gospodarka"
+              class="w-full"
+            />
+            <.button phx-disable-with="Zapisywanie..." class="btn btn-primary mt-2">
+              Dodaj temat
+            </.button>
+          </.form>
         </div>
       </div>
 

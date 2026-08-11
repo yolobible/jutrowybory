@@ -66,4 +66,34 @@ defmodule JutrowyboryWeb.AdminLiveTest do
     refute Survey.get_question!(question.id).active
     assert render(view) =~ "Aktywuj"
   end
+
+  test "pozwala dodać nowy temat", %{conn: conn} do
+    {:ok, view, html} =
+      conn
+      |> log_in_user(admin_fixture())
+      |> live(~p"/admin")
+
+    assert html =~ "admin-topic-form"
+
+    view
+    |> form("#admin-topic-form", topic: %{name: "Transport"})
+    |> render_submit()
+
+    assert render(view) =~ "Temat został dodany."
+    assert Enum.any?(Survey.list_topics(), &(&1.name == "Transport"))
+  end
+
+  test "odrzuca temat o zduplikowanej nazwie", %{conn: conn} do
+    {:ok, view, _html} =
+      conn
+      |> log_in_user(admin_fixture())
+      |> live(~p"/admin")
+
+    html =
+      view
+      |> form("#admin-topic-form", topic: %{name: "Gospodarka"})
+      |> render_submit()
+
+    assert html =~ "has already been taken"
+  end
 end

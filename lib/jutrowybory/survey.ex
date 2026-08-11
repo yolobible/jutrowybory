@@ -24,6 +24,10 @@ defmodule Jutrowybory.Survey do
     |> Repo.insert()
   end
 
+  def change_topic(%Topic{} = topic, attrs \\ %{}) do
+    Topic.changeset(topic, attrs)
+  end
+
   ## Pytania
 
   def list_questions(nil) do
