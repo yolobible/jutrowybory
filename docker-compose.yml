@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jutrowybory
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:? ustaw w .env}
+      POSTGRES_DB: jutrowybory_prod
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jutrowybory -d jutrowybory_prod"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://jutrowybory:${POSTGRES_PASSWORD}@db/jutrowybory_prod
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:? ustaw w .env}
+      PHX_HOST: ${PHX_HOST:-jutrowybory.pl}
+      PHX_SERVER: "true"
+      PORT: "4000"
+    # migracje są idempotentne — wykonują się przy każdym starcie
+    command: sh -c "/app/bin/migrate && /app/bin/server"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

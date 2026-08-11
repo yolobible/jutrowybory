@@ -1,0 +1,42 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-sm">
+    <div class="text-center">
+      <.header>
+        Rejestracja
+        <:subtitle>
+          Masz już konto?
+          <.link navigate={~p"/users/log-in"} class="font-semibold text-brand hover:underline">
+            Zaloguj się
+          </.link>
+        </:subtitle>
+      </.header>
+    </div>
+
+    <p class="text-sm text-base-content/70 mb-4 text-center">
+      Po rejestracji otrzymasz automatycznie nazwę <b>obywatel_N</b>.
+    </p>
+
+    <.form :let={f} for={@changeset} action={~p"/users/register"}>
+      <.input
+        field={f[:email]}
+        type="email"
+        label="E-mail"
+        autocomplete="username"
+        spellcheck="false"
+        required
+        phx-mounted={JS.focus()}
+      />
+      <.input
+        field={f[:password]}
+        type="password"
+        label="Hasło (min. 12 znaków)"
+        autocomplete="new-password"
+        required
+      />
+
+      <.button phx-disable-with="Tworzenie konta..." class="btn btn-primary w-full">
+        Utwórz konto
+      </.button>
+    </.form>
+  </div>
+</Layouts.app>

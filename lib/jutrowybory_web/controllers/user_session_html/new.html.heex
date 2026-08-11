@@ -1,0 +1,47 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-sm space-y-4">
+    <div class="text-center">
+      <.header>
+        <p>Logowanie</p>
+        <:subtitle>
+          <%= if @current_scope do %>
+            Musisz się ponownie uwierzytelnić, aby wykonać tę operację.
+          <% else %>
+            Nie masz konta? <.link
+              navigate={~p"/users/register"}
+              class="font-semibold text-brand hover:underline"
+              phx-no-format
+            >Zarejestruj się</.link>.
+          <% end %>
+        </:subtitle>
+      </.header>
+    </div>
+
+    <.form :let={f} for={@form} as={:user} id="login_form_password" action={~p"/users/log-in"}>
+      <.input
+        readonly={!!@current_scope}
+        field={f[:email]}
+        type="email"
+        label="E-mail"
+        autocomplete="username"
+        spellcheck="false"
+        required
+        phx-mounted={JS.focus()}
+      />
+      <.input
+        field={f[:password]}
+        type="password"
+        label="Hasło"
+        autocomplete="current-password"
+        spellcheck="false"
+        required
+      />
+      <.button class="btn btn-primary w-full" name={@form[:remember_me].name} value="true">
+        Zaloguj i zapamiętaj <span aria-hidden="true">→</span>
+      </.button>
+      <.button class="btn btn-primary btn-soft w-full mt-2">
+        Zaloguj tylko na ten raz
+      </.button>
+    </.form>
+  </div>
+</Layouts.app>

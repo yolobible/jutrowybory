@@ -1,0 +1,66 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <%!-- Hero --%>
+  <div class="hero bg-base-200 rounded-box py-16 px-6">
+    <div class="hero-content text-center max-w-2xl">
+      <div>
+        <div class="flex justify-center mb-4">
+          <img src={~p"/images/image.png"} alt="JutroWybory" class="size-28 rounded-full shadow-lg" />
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-bold">JutroWybory</h1>
+        <p class="py-6 text-lg text-base-content/80">
+          Platforma sondażowa, w której każdy obywatel ocenia postulaty wyborcze,
+          komentuje je i głosuje na opinie innych. Sprawdź, co myśli społeczność,
+          zanim oddasz swój głos.
+        </p>
+        <div class="flex gap-3 justify-center flex-wrap">
+          <%= if @current_scope && @current_scope.user do %>
+            <a href={~p"/ankieta"} class="btn btn-primary btn-lg">Przejdź do ankiety</a>
+          <% else %>
+            <a href={~p"/users/register"} class="btn btn-primary btn-lg">Zarejestruj się</a>
+            <a href={~p"/users/log-in"} class="btn btn-outline btn-lg">Zaloguj się</a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Jak to działa --%>
+  <h2 class="text-2xl font-bold text-center mt-24 mb-6">Jak to działa?</h2>
+  <div class="grid gap-6 sm:grid-cols-3">
+    <div class="card bg-base-100 border border-base-300 shadow-sm">
+      <div class="card-body items-center text-center">
+        <.icon name="hero-adjustments-horizontal" class="size-10 text-primary" />
+        <h3 class="card-title">Oceń postulaty</h3>
+        <p class="text-sm text-base-content/70">
+          Odpowiadaj na pytania „Czy zgadzasz się z…” na pięciostopniowej skali —
+          od „zdecydowanie nie” po „zdecydowanie tak”.
+        </p>
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-sm">
+      <div class="card-body items-center text-center">
+        <.icon name="hero-chat-bubble-left-right" class="size-10 text-primary" />
+        <h3 class="card-title">Komentuj i głosuj</h3>
+        <p class="text-sm text-base-content/70">
+          Zostaw swój komentarz pod każdym pytaniem i głosuj na komentarze innych
+          obywateli — najlepsze opinie trafiają na górę.
+        </p>
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-sm">
+      <div class="card-body items-center text-center">
+        <.icon name="hero-presentation-chart-line" class="size-10 text-primary" />
+        <h3 class="card-title">Śledź wyniki</h3>
+        <p class="text-sm text-base-content/70">
+          Szczegółowe statystyki: rozkład odpowiedzi, średnie, mediany
+          i najwyżej oceniane komentarze dla każdego pytania.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div :if={!(@current_scope && @current_scope.user)} class="text-center mt-12">
+    <p class="mb-4 text-base-content/70">Dołącz do społeczności i oddaj swój głos.</p>
+    <a href={~p"/users/register"} class="btn btn-primary">Utwórz konto obywatela</a>
+  </div>
+</Layouts.app>

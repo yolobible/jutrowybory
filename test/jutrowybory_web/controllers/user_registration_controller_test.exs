@@ -1,0 +1,50 @@
+defmodule JutrowyboryWeb.UserRegistrationControllerTest do
+  use JutrowyboryWeb.ConnCase, async: true
+
+  import Jutrowybory.AccountsFixtures
+
+  describe "GET /users/register" do
+    test "renders registration page", %{conn: conn} do
+      conn = get(conn, ~p"/users/register")
+      response = html_response(conn, 200)
+      assert response =~ "Rejestracja"
+      assert response =~ ~p"/users/log-in"
+      assert response =~ ~p"/users/register"
+    end
+
+    test "redirects if already logged in", %{conn: conn} do
+      conn = conn |> log_in_user(user_fixture()) |> get(~p"/users/register")
+
+      assert redirected_to(conn) == ~p"/ankieta"
+    end
+  end
+
+  describe "POST /users/register" do
+    test "creates account, assigns obywatel_N username and logs in", %{conn: conn} do
+      email = unique_user_email()
+
+      conn =
+        post(conn, ~p"/users/register", %{
+          "user" => valid_user_attributes(email: email)
+        })
+
+      assert get_session(conn, :user_token)
+      assert redirected_to(conn) == ~p"/ankieta"
+
+      user = Jutrowybory.Accounts.get_user_by_email(email)
+      assert user.username == "obywatel_#{user.id}"
+      assert user.role == "obywatel"
+    end
+
+    test "render errors for invalid data", %{conn: conn} do
+      conn =
+        post(conn, ~p"/users/register", %{
+          "user" => %{"email" => "with spaces", "password" => "too short"}
+        })
+
+      response = html_response(conn, 200)
+      assert response =~ "Rejestracja"
+      assert response =~ "must have the @ sign and no spaces"
+    end
+  end
+end
