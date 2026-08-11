@@ -96,4 +96,27 @@ defmodule JutrowyboryWeb.AdminLiveTest do
 
     assert html =~ "has already been taken"
   end
+
+  test "importuje pytania i tematy z pliku CSV", %{conn: conn} do
+    {:ok, view, _html} =
+      conn
+      |> log_in_user(admin_fixture())
+      |> live(~p"/admin")
+
+    csv_content = "temat,pytanie\nSport,bezpłatnymi basenami miejskimi\n"
+
+    upload =
+      file_input(view, "#admin-import-form", :csv, [
+        %{name: "import.csv", content: csv_content}
+      ])
+
+    assert render_upload(upload, "import.csv") =~ "import.csv"
+
+    view
+    |> element("#admin-import-form")
+    |> render_submit()
+
+    assert render(view) =~ "Zaimportowano 1 pytań (1 nowych tematów)."
+    assert Enum.any?(Survey.list_topics(), &(&1.name == "Sport"))
+  end
 end

@@ -18,14 +18,21 @@ defmodule Jutrowybory.Release do
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
-  @doc "Uruchamia priv/repo/seeds.exs (tematy, pytania, konto admina, demo-dane)."
+  @doc """
+  Uruchamia priv/repo/seeds.exs (tematy, pytania, konto admina, demo-dane).
+
+  Startuje tylko Repo (przez `Ecto.Migrator.with_repo/2`), nie całą aplikację —
+  dzięki temu działa obok działającego serwera, bez konfliktu portu HTTP.
+  """
   def seed do
     load_app()
-    {:ok, _} = Application.ensure_all_started(@app)
 
-    @app
-    |> Application.app_dir("priv/repo/seeds.exs")
-    |> Code.eval_file()
+    for repo <- repos() do
+      {:ok, _, _} =
+        Ecto.Migrator.with_repo(repo, fn _repo ->
+          Code.eval_file(Application.app_dir(@app, "priv/repo/seeds.exs"))
+        end)
+    end
   end
 
   defp repos do

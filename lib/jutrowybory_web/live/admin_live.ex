@@ -14,10 +14,48 @@ defmodule JutrowyboryWeb.AdminLive do
      |> assign(:global, Survey.global_stats())
      |> assign(:stats, Survey.question_stats())
      |> assign(:topic_form, topic_form())
-     |> assign(:question_form, question_form())}
+     |> assign(:question_form, question_form())
+     |> allow_upload(:csv, accept: ~w(.csv), max_entries: 1, max_file_size: 1_000_000)}
   end
 
   @impl true
+  def handle_event("validate_import", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("save_import", _params, socket) do
+    case consume_uploaded_entries(socket, :csv, fn %{path: path}, _entry ->
+           {:ok, File.read!(path)}
+         end) do
+      [] ->
+        {:noreply, put_flash(socket, :error, "Wybierz plik CSV przed importem.")}
+
+      [content | _] ->
+        {:ok, %{topics: topics, questions: questions, skipped: skipped}} =
+          Survey.import_questions_csv(content)
+
+        message = "Zaimportowano #{questions} pytań (#{topics} nowych tematów)."
+
+        message =
+          if skipped == [] do
+            message
+          else
+            message <> " Pominięto błędne linie: #{Enum.join(skipped, ", ")}."
+          end
+
+        {:noreply,
+         socket
+         |> put_flash(:info, message)
+         |> assign(:topics, Survey.list_topics())
+         |> assign(:global, Survey.global_stats())
+         |> assign(:stats, Survey.question_stats())}
+    end
+  end
+
+  def handle_event("cancel_upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :csv, ref)}
+  end
+
   def handle_event("validate_topic", %{"topic" => params}, socket) do
     {:noreply, assign(socket, :topic_form, topic_form(params))}
   end
@@ -106,6 +144,44 @@ defmodule JutrowyboryWeb.AdminLive do
         <div class="stat">
           <div class="stat-title">Głosy na komentarze</div>
           <div class="stat-value">{@global.votes}</div>
+        </div>
+      </div>
+
+      <%!-- Import pytań z CSV --%>
+      <div class="card bg-base-100 border border-base-300 shadow-sm mb-8">
+        <div class="card-body">
+          <h2 class="card-title">Import pytań z CSV</h2>
+          <p class="text-sm text-base-content/70">
+            Format: <code class="font-mono">temat,treść pytania</code> — jedna para na linię.
+            Nieistniejące tematy zostaną utworzone automatycznie. Pierwszy wiersz może być
+            nagłówkiem (<code class="font-mono">temat,pytanie</code>).
+          </p>
+          <form id="admin-import-form" phx-change="validate_import" phx-submit="save_import">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-2">
+              <.live_file_input
+                upload={@uploads.csv}
+                class="file-input file-input-bordered w-full sm:max-w-md"
+              />
+              <.button phx-disable-with="Importowanie..." class="btn btn-primary">
+                Importuj
+              </.button>
+            </div>
+            <div :for={entry <- @uploads.csv.entries} class="text-sm mt-2">
+              {entry.client_name}
+              <button
+                type="button"
+                phx-click="cancel_upload"
+                phx-value-ref={entry.ref}
+                class="btn btn-ghost btn-xs"
+                aria-label="Usuń"
+              >
+                <.icon name="hero-x-mark" class="size-4" />
+              </button>
+            </div>
+            <p :for={err <- upload_errors(@uploads.csv)} class="text-error text-sm mt-2">
+              {error_to_string(err)}
+            </p>
+          </form>
         </div>
       </div>
 
@@ -250,4 +326,9 @@ defmodule JutrowyboryWeb.AdminLive do
       0
     end
   end
+
+  defp error_to_string(:too_large), do: "Plik jest za duży (maks. 1 MB)."
+  defp error_to_string(:not_accepted), do: "Dozwolone są tylko pliki .csv."
+  defp error_to_string(:too_many_files), do: "Można wybrać tylko jeden plik."
+  defp error_to_string(err), do: "Błąd uploadu: #{inspect(err)}"
 end

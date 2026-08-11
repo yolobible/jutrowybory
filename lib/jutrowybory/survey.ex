@@ -1,6 +1,6 @@
 defmodule Jutrowybory.Survey do
   @moduledoc """
-  Kontekst ankiety: tematy, pytania, odpowiedzi (skala 0-9),
+  Kontekst ankiety: tematy, pytania, odpowiedzi (skala 0-4),
   komentarze i głosy na komentarze.
   """
 
@@ -26,6 +26,109 @@ defmodule Jutrowybory.Survey do
 
   def change_topic(%Topic{} = topic, attrs \\ %{}) do
     Topic.changeset(topic, attrs)
+  end
+
+  @doc """
+  Importuje pytania z treści CSV w formacie `temat,treść pytania` (jedna para
+  na linię, opcjonalny wiersz nagłówka). Tematy są tworzone, gdy nie istnieją.
+
+  Zwraca `{:ok, %{topics: nowe_tematy, questions: nowe_pytania, skipped: numery_linii}}`.
+  """
+  def import_questions_csv(content) do
+    base_position = Repo.aggregate(Question, :count)
+
+    result =
+      content
+      |> String.replace_prefix("\uFEFF", "")
+      |> String.split(~r/\r\n|\r|\n/, trim: true)
+      |> Enum.with_index(1)
+      |> Enum.reduce(%{topics: 0, questions: 0, skipped: []}, fn {line, line_no}, acc ->
+        cond do
+          csv_header?(line_no, line) ->
+            acc
+
+          true ->
+            with {topic_name, text} <- parse_csv_line(line),
+                 # walidacja przed utworzeniem tematu, żeby błędne linie
+                 # nie zostawiały pustych tematów
+                 :ok <- valid_question_text?(text),
+                 {topic, created?} <- find_or_create_topic(topic_name),
+                 {:ok, _question} <-
+                   create_question(%{
+                     "text" => text,
+                     "topic_id" => topic.id,
+                     "position" => base_position + acc.questions + 1
+                   }) do
+              %{
+                acc
+                | topics: acc.topics + if(created?, do: 1, else: 0),
+                  questions: acc.questions + 1
+              }
+            else
+              _ -> %{acc | skipped: [line_no | acc.skipped]}
+            end
+        end
+      end)
+
+    {:ok, %{result | skipped: Enum.reverse(result.skipped)}}
+  end
+
+  defp csv_header?(1, line) do
+    String.downcase(String.trim(line)) in ["temat,pytanie", "temat,tekst", "topic,question"]
+  end
+
+  defp csv_header?(_line_no, _line), do: false
+
+  # zgodne z Question.changeset: validate_length(:text, min: 5, max: 1000)
+  defp valid_question_text?(text) do
+    length = String.length(text)
+
+    if length >= 5 and length <= 1000 do
+      :ok
+    else
+      :error
+    end
+  end
+
+  # "temat,pytanie" — dzieli na pierwszym przecinku, wartości mogą być w cudzysłowach
+  defp parse_csv_line(line) do
+    case String.split(line, ",", parts: 2) do
+      [topic, text] ->
+        topic = unquote_csv(topic)
+        text = unquote_csv(text)
+
+        if topic != "" and text != "" do
+          {topic, text}
+        else
+          :error
+        end
+
+      _ ->
+        :error
+    end
+  end
+
+  defp unquote_csv(value) do
+    value = String.trim(value)
+
+    if String.starts_with?(value, "\"") and String.ends_with?(value, "\"") do
+      value |> String.slice(1..-2//1) |> String.replace("\"\"", "\"")
+    else
+      value
+    end
+  end
+
+  defp find_or_create_topic(name) do
+    case Repo.get_by(Topic, name: name) do
+      nil ->
+        case create_topic(%{name: name}) do
+          {:ok, topic} -> {topic, true}
+          {:error, _} -> :error
+        end
+
+      topic ->
+        {topic, false}
+    end
   end
 
   ## Pytania

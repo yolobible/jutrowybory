@@ -134,4 +134,48 @@ defmodule Jutrowybory.SurveyTest do
              ]
     end
   end
+
+  describe "import_questions_csv/1" do
+    test "tworzy tematy i pytania, pomija nagłówek" do
+      csv = """
+      temat,pytanie
+      Sport,bezpłatnymi basenami miejskimi
+      Sport,obowiązkowym WF-em dla dorosłych
+      Zdrowie,skróceniem kolejek do specjalistów
+      """
+
+      assert {:ok, %{topics: 2, questions: 3, skipped: []}} =
+               Survey.import_questions_csv(csv)
+
+      topics = Survey.list_topics() |> Enum.map(& &1.name)
+      assert "Sport" in topics
+      assert "Zdrowie" in topics
+      assert length(Survey.list_questions(nil)) == 3
+    end
+
+    test "wykorzystuje istniejący temat i obsługuje cudzysłowy" do
+      topic_fixture(%{name: "Sport"})
+
+      csv = ~s(Sport,"podatkami od tzw. ""junk food""")
+
+      assert {:ok, %{topics: 0, questions: 1, skipped: []}} =
+               Survey.import_questions_csv(csv)
+
+      assert [question] = Survey.list_questions(nil)
+      assert question.text == ~s(podatkami od tzw. "junk food")
+    end
+
+    test "pomija błędne linie i zgłasza ich numery" do
+      csv = """
+      temat,pytanie
+      linia bez przecinka
+      Sport,abc
+      Sport,pełnoprawnym pytaniem o rowery
+      ,brak tematu
+      """
+
+      assert {:ok, %{topics: 1, questions: 1, skipped: [2, 3, 5]}} =
+               Survey.import_questions_csv(csv)
+    end
+  end
 end
