@@ -270,7 +270,8 @@ defmodule JutrowyboryWeb.UserAuth do
 
   defp mount_current_scope(%Socket{} = socket, session) do
     Phoenix.Component.assign_new(socket, :current_scope, fn ->
-      case session["user_token"] && Jutrowybory.Accounts.get_user_by_session_token(session["user_token"]) do
+      case session["user_token"] &&
+             Jutrowybory.Accounts.get_user_by_session_token(session["user_token"]) do
         {user, _token_inserted_at} -> Scope.for_user(user)
         _ -> Scope.for_user(nil)
       end

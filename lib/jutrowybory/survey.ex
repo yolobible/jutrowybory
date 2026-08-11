@@ -167,7 +167,9 @@ defmodule Jutrowybory.Survey do
 
       avg =
         if total > 0 do
-          sum = distribution |> Enum.with_index() |> Enum.reduce(0, fn {c, v}, acc -> acc + c * v end)
+          sum =
+            distribution |> Enum.with_index() |> Enum.reduce(0, fn {c, v}, acc -> acc + c * v end)
+
           Float.round(sum / total, 1)
         end
 
@@ -227,7 +229,9 @@ defmodule Jutrowybory.Survey do
 
       avg =
         if total > 0 do
-          sum = distribution |> Enum.with_index() |> Enum.reduce(0, fn {c, v}, acc -> acc + c * v end)
+          sum =
+            distribution |> Enum.with_index() |> Enum.reduce(0, fn {c, v}, acc -> acc + c * v end)
+
           Float.round(sum / total, 2)
         end
 

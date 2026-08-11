@@ -45,6 +45,7 @@ defmodule JutrowyboryWeb.AdminStatsControllerTest do
     assert question["odpowiedzi"] == 1
     assert question["srednia"] == 3.0
     assert question["mediana"] == 3
+
     assert question["rozklad"] == %{
              "zdecydowanie nie" => 0,
              "raczej nie" => 0,
@@ -68,5 +69,32 @@ defmodule JutrowyboryWeb.AdminStatsControllerTest do
   test "GET /admin/eksport.json wymaga zalogowania", %{conn: conn} do
     conn = get(conn, ~p"/admin/eksport.json")
     assert redirected_to(conn) == ~p"/users/log-in"
+  end
+
+  test "GET /statystyki.json jest publiczny i ustawia nagłówek CORS", %{conn: conn} do
+    conn = get(conn, ~p"/statystyki.json")
+
+    assert response_content_type(conn, :json)
+    # inline JSON, nie pobieranie pliku
+    assert get_resp_header(conn, "content-disposition") == []
+
+    assert get_resp_header(conn, "access-control-allow-origin") == [
+             "https://programpolska.pl"
+           ]
+
+    data = Jason.decode!(response(conn, 200))
+
+    assert data["globalne"]["answers"] == 1
+    assert [question] = data["pytania"]
+    assert question["pytanie"] == "Czy zgadzasz się z podwyższeniem płacy minimalnej"
+  end
+
+  test "GET /statystyki.json działa także dla zalogowanego użytkownika", %{conn: conn} do
+    conn =
+      conn
+      |> log_in_user(user_fixture())
+      |> get(~p"/statystyki.json")
+
+    assert response(conn, 200)
   end
 end

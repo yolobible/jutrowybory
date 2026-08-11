@@ -3,21 +3,34 @@ defmodule JutrowyboryWeb.AdminStatsController do
 
   alias Jutrowybory.Survey
 
+  @cors_origin "https://programpolska.pl"
+
   @doc "Eksport statystyk do pliku JSON (tylko admin)."
   def export(conn, _params) do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_download({:binary, stats_json()},
+      filename: "statystyki-jutrowybory.json"
+    )
+  end
+
+  @doc "Publiczny endpoint JSON ze statystykami (CORS: programpolska.pl)."
+  def show(conn, _params) do
+    conn
+    |> put_resp_header("access-control-allow-origin", @cors_origin)
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, stats_json())
+  end
+
+  defp stats_json do
     stats = Survey.question_stats()
 
-    data = %{
+    %{
       wygenerowano: DateTime.utc_now(:second),
       globalne: Survey.global_stats(),
       pytania: Enum.map(stats, &question_json/1)
     }
-
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_download({:binary, Jason.encode!(data, pretty: true)},
-      filename: "statystyki-jutrowybory.json"
-    )
+    |> Jason.encode!(pretty: true)
   end
 
   defp question_json(stat) do

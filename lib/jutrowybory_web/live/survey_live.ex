@@ -96,16 +96,26 @@ defmodule JutrowyboryWeb.SurveyLive do
 
     {:noreply,
      update(socket, :comment_view, fn views ->
-       Map.update(views, String.to_integer(qid), %{sort: sort, shown: @comments_page_size}, &Map.put(&1, :sort, sort))
+       Map.update(
+         views,
+         String.to_integer(qid),
+         %{sort: sort, shown: @comments_page_size},
+         &Map.put(&1, :sort, sort)
+       )
      end)}
   end
 
   def handle_event("comments_more", %{"question_id" => qid}, socket) do
     {:noreply,
      update(socket, :comment_view, fn views ->
-       Map.update(views, String.to_integer(qid), %{sort: :top, shown: @comments_page_size * 2}, fn view ->
-         Map.update(view, :shown, @comments_page_size, &(&1 + @comments_page_size))
-       end)
+       Map.update(
+         views,
+         String.to_integer(qid),
+         %{sort: :top, shown: @comments_page_size * 2},
+         fn view ->
+           Map.update(view, :shown, @comments_page_size, &(&1 + @comments_page_size))
+         end
+       )
      end)}
   end
 
@@ -222,7 +232,9 @@ defmodule JutrowyboryWeb.SurveyLive do
               <% result = @results[question.id] %>
               <div :if={Map.has_key?(@answers, question.id) && result && result.total > 0}>
                 <div class="text-xs text-base-content/60 mb-1">
-                  Wyniki społeczności: {result.total} odpowiedzi · średnia: {Survey.answer_label(round(result.avg))}
+                  Wyniki społeczności: {result.total} odpowiedzi · średnia: {Survey.answer_label(
+                    round(result.avg)
+                  )}
                 </div>
                 <div class="flex items-end gap-1 h-12">
                   <div
@@ -289,7 +301,7 @@ defmodule JutrowyboryWeb.SurveyLive do
                   phx-click="comments_sort"
                   phx-value-question_id={question.id}
                   phx-value-sort="top"
-                  class={["btn btn-xs", sort == :top && "btn-primary" || "btn-ghost"]}
+                  class={["btn btn-xs", (sort == :top && "btn-primary") || "btn-ghost"]}
                 >
                   Najlepsze
                 </button>
@@ -298,7 +310,7 @@ defmodule JutrowyboryWeb.SurveyLive do
                   phx-click="comments_sort"
                   phx-value-question_id={question.id}
                   phx-value-sort="newest"
-                  class={["btn btn-xs", sort == :newest && "btn-primary" || "btn-ghost"]}
+                  class={["btn btn-xs", (sort == :newest && "btn-primary") || "btn-ghost"]}
                 >
                   Najnowsze
                 </button>

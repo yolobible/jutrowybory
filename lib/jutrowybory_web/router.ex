@@ -23,6 +23,13 @@ defmodule JutrowyboryWeb.Router do
     get "/", PageController, :home
   end
 
+  # Publiczne statystyki JSON (dostępne bez logowania, CORS: programpolska.pl)
+  scope "/", JutrowyboryWeb do
+    pipe_through :api
+
+    get "/statystyki.json", AdminStatsController, :show
+  end
+
   live_session :authenticated,
     on_mount: [{JutrowyboryWeb.UserAuth, :require_authenticated}] do
     scope "/", JutrowyboryWeb do

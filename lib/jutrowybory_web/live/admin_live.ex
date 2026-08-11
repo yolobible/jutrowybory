@@ -89,7 +89,12 @@ defmodule JutrowyboryWeb.AdminLive do
       <div class="card bg-base-100 border border-base-300 shadow-sm mb-8">
         <div class="card-body">
           <h2 class="card-title">Dodaj nowe pytanie</h2>
-          <.form for={@question_form} id="admin-question-form" phx-change="validate_question" phx-submit="save_question">
+          <.form
+            for={@question_form}
+            id="admin-question-form"
+            phx-change="validate_question"
+            phx-submit="save_question"
+          >
             <div class="flex flex-col sm:flex-row gap-3">
               <.input
                 field={@question_form[:topic_id]}
@@ -141,7 +146,7 @@ defmodule JutrowyboryWeb.AdminLive do
                 <button
                   phx-click="toggle_active"
                   phx-value-id={stat.question.id}
-                  class={["btn btn-xs", stat.question.active && "btn-outline" || "btn-warning"]}
+                  class={["btn btn-xs", (stat.question.active && "btn-outline") || "btn-warning"]}
                 >
                   {if stat.question.active, do: "Dezaktywuj", else: "Aktywuj"}
                 </button>

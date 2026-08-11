@@ -145,7 +145,9 @@ defmodule JutrowyboryWeb.UserSessionControllerTest do
           "user" => %{"email" => user.email}
         })
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Jeśli Twój e-mail jest w naszym systemie"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+               "Jeśli Twój e-mail jest w naszym systemie"
+
       assert Jutrowybory.Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "login"
     end
 
