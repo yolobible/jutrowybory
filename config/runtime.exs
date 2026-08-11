@@ -41,22 +41,36 @@ if config_env() == :dev do
 end
 
 if config_env() == :prod do
-  database_url =
-    System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+  # Osobne zmienne PG* są preferowane nad DATABASE_URL — hasło nie przechodzi
+  # wtedy przez parser URL, więc może zawierać dowolne znaki specjalne.
+  repo_connection =
+    if url = System.get_env("DATABASE_URL") do
+      [url: url]
+    else
+      [
+        username:
+          System.get_env("PGUSER") ||
+            raise("environment variable PGUSER is missing (or set DATABASE_URL)"),
+        password:
+          System.get_env("PGPASSWORD") ||
+            raise("environment variable PGPASSWORD is missing (or set DATABASE_URL)"),
+        database:
+          System.get_env("PGDATABASE") ||
+            raise("environment variable PGDATABASE is missing (or set DATABASE_URL)"),
+        hostname: System.get_env("PGHOST") || "localhost",
+        port: String.to_integer(System.get_env("PGPORT") || "5432")
+      ]
+    end
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :jutrowybory, Jutrowybory.Repo,
-    # ssl: true,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    # For machines with several cores, consider starting multiple pools of `pool_size`
-    # pool_count: 4,
-    socket_options: maybe_ipv6
+    repo_connection ++
+      [
+        # ssl: true,
+        pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+        socket_options: maybe_ipv6
+      ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

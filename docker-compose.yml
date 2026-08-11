@@ -21,7 +21,11 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: ecto://jutrowybory:${POSTGRES_PASSWORD}@db/jutrowybory_prod
+      # Osobne zmienne zamiast DATABASE_URL — hasło może zawierać znaki specjalne
+      PGUSER: jutrowybory
+      PGPASSWORD: ${POSTGRES_PASSWORD:? ustaw w .env}
+      PGDATABASE: jutrowybory_prod
+      PGHOST: db
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:? ustaw w .env}
       PHX_HOST: ${PHX_HOST:-jutrowybory.pl}
       PHX_SERVER: "true"
